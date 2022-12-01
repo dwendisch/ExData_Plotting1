@@ -1,0 +1,52 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(janitor)
+library(patchwork)
+
+x <- read_delim("household_power_consumption.txt",     delim = ";", escape_double = FALSE, trim_ws = TRUE) %>% clean_names()
+x <- x %>% mutate(across(global_active_power:sub_metering_3, as.numeric), date)
+```
+
+```{r}
+x1 <- x%>%mutate(date=dmy(date))%>% filter(date %in% ymd(c("2007-02-01","2007-02-02")) ) %>% 
+  mutate(date_time =ymd_hms(paste(date,as.character(time))) ) %>% 
+  mutate(weekday=weekdays(date)) 
+p1 <- x1 %>% ggplot(aes(global_active_power))+ geom_histogram()
+p1
+ggsave(plot = p1,"plot1.png", units = "px")
+```
+```{r}
+x%>%   mutate(date_time =paste(date,as.character(time)))
+
+x1 <- x%>%mutate(date=dmy(date))%>% filter(date %in% ymd(c("2007-02-01","2007-02-02")) ) %>% 
+  mutate(date_time =ymd_hms(paste(date,as.character(time))) ) %>% 
+  mutate(weekday=weekdays(date)) 
+
+
+p2 <- x1 %>% ggplot(aes(date_time, global_active_power))+geom_line()
+p2
+ggsave(plot = p2,"plot2.png", units = "px")
+```
+```{r}
+p3 <- x1 %>%pivot_longer(cols =sub_metering_1:sub_metering_3, values_to = "energy_sub_metering" ) %>%  ggplot(aes(date_time, energy_sub_metering, color=name))+geom_line()
+p3
+ggsave(plot =p3, "plot3.png", units = "px")
+```
+
+
+```{r}
+p4.3 <- x1 %>% ggplot(aes(date_time, voltage))+geom_line()
+
+p4.4 <- x1 %>% ggplot(aes(date_time, global_reactive_power))+geom_line()
+
+p4 <- (p2+p3)/(p4.3+p4.4)
+p4
+ggsave(plot = p4,"plot4.png", units = "px")
+```
+
